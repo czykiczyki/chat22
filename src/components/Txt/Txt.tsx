@@ -17,7 +17,7 @@ interface TxtProps extends TextProps {
 
 const Txt: React.FC<TxtProps> = ({
   variant = 'default',
-  color = colors.text,
+  color = 'text',
   children,
   lowercase,
   uppercase,
@@ -33,7 +33,9 @@ const Txt: React.FC<TxtProps> = ({
   }
 
   return (
-    <Text style={[{ color, fontSize: fontSizes[variant] }, style]} {...rest}>
+    <Text
+      style={[{ color: colors[color], fontSize: fontSizes[variant] }, style]}
+      {...rest}>
       {children}
     </Text>
   );

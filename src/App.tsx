@@ -6,12 +6,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Loader from './components/Loader';
 import Login from './screens/auth/Login';
 import Chat from './screens/chat/Chat';
-import Txt from './components/Txt';
 import Toast from './components/Toast';
 import { useUser } from './store/user/useUser';
 import { store } from './store/store';
+import { colors } from './theme';
+import HeaderProfileButton from './components/HeaderProfileButton/HeaderProfileButton';
+import { RootStackParamList } from './types/navigation';
+import Profile from './screens/profile/Profile';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
   const { isLoggedIn } = useUser();
@@ -26,7 +29,31 @@ const AppNavigator = () => {
             name="Chat"
             component={Chat}
             options={{
-              headerRight: () => <Txt>Profile</Txt>,
+              headerStyle: {
+                backgroundColor: colors.primaryDark,
+                height: 110,
+              },
+              headerTitleStyle: {
+                color: colors.white,
+                fontWeight: 'bold',
+                fontSize: 20,
+              },
+              headerRight: () => <HeaderProfileButton />,
+            }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={Profile}
+            options={{
+              headerStyle: {
+                backgroundColor: colors.primaryDark,
+                height: 110,
+              },
+              headerTitleStyle: {
+                color: colors.white,
+                fontWeight: 'bold',
+                fontSize: 20,
+              },
             }}
           />
         </Stack.Navigator>

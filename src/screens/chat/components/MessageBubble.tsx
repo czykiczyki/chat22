@@ -6,7 +6,7 @@ type MessageProps = {
   message: {
     id: string;
     text: string;
-    sender: 'me' | 'other';
+    sender: 'me' | 'assistant';
   };
 };
 

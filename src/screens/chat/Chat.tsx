@@ -10,41 +10,26 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import MessageBubble from './components/MessageBubble';
 import { colors, dimensions } from '../../theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-type Message = {
-  id: string;
-  text: string;
-  sender: 'me' | 'other';
-};
+import { useChat } from './hooks/useChat';
 
 const Chat = () => {
-  // TODO replace mock messages with real messages
-  const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: 'Hello! How are you?', sender: 'other' },
-    { id: '2', text: 'I am fine, thanks! And you?', sender: 'me' },
-    { id: '3', text: 'I am doing great!', sender: 'other' },
-  ]);
-
+  const { messages, isLoading, sendMessage } = useChat();
   const [newMessage, setNewMessage] = useState('');
-
-  const sendMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: String(messages.length + 1),
-        text: newMessage,
-        sender: 'me',
-      };
-      setMessages([...messages, newMsg]);
-      setNewMessage('');
-    }
-  };
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
+  };
+
+  const handleSend = () => {
+    if (newMessage.trim()) {
+      sendMessage(newMessage);
+      setNewMessage('');
+    }
   };
 
   return (
@@ -60,6 +45,9 @@ const Chat = () => {
             keyExtractor={item => item.id}
             contentContainerStyle={styles.messagesList}
           />
+          {isLoading && (
+            <ActivityIndicator size="large" color={colors.primary} />
+          )}
           <SafeAreaView style={styles.inputContainer} edges={['bottom']}>
             <TextInput
               style={styles.input}
@@ -68,7 +56,7 @@ const Chat = () => {
               value={newMessage}
               onChangeText={setNewMessage}
             />
-            <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
               <Text style={styles.sendButtonText}>Send</Text>
             </TouchableOpacity>
           </SafeAreaView>

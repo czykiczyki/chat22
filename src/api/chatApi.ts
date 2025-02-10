@@ -8,21 +8,38 @@ export type ChatMessage = {
   content: string;
 };
 
+type UploadedFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
 export const streamChatGPTResponse = async (
   messages: ChatMessage[],
+  files: UploadedFile[],
   onPartialResponse: (partial: string) => void,
 ) => {
   try {
+    const formData = new FormData();
+
+    formData.append('messages', JSON.stringify(messages));
+    formData.append('model', 'gpt-3.5-turbo');
+    formData.append('stream', 'true');
+
+    files.forEach((file, index) => {
+      formData.append(`file_${index}`, {
+        uri: file.uri,
+        name: file.name,
+        type: file.type,
+      });
+    });
+
     const response = await axios({
       method: 'post',
       url: OPENAI_API_URL,
-      data: {
-        model: 'gpt-3.5-turbo',
-        messages,
-        stream: true,
-      },
+      data: formData,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'multipart/form-data',
         Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       responseType: 'text',
@@ -49,11 +66,15 @@ export const streamChatGPTResponse = async (
     });
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error(error.response?.status, error.response?.data);
+      if (error.response) {
+        console.error('API Error:', error.response.status, error.response.data);
+      } else {
+        console.error('API Error (no response):', error.message);
+      }
     } else if (error instanceof Error) {
       console.error('Error sending message to ChatGPT:', error.message);
     } else {
-      console.error('Unknown error occurred.');
+      console.error('Unknown error occurred:', error);
     }
 
     throw new Error('Could not send message to ChatGPT.');

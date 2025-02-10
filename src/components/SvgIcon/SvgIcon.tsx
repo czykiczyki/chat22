@@ -6,6 +6,36 @@ import { SvgIconProps as Props } from './types';
 export const DEFAULT_ICON_SIZE = 24;
 export const DEFAULT_ICON_COLOR = colors.white;
 
+export const Upload = ({
+  width = DEFAULT_ICON_SIZE,
+  height = DEFAULT_ICON_SIZE,
+  color = DEFAULT_ICON_COLOR,
+  ...rest
+}: Props) => (
+  <Svg width={width} height={height} fill="none" viewBox="0 0 24 24" {...rest}>
+    <Path
+      d="M5.82788 16.0013C3.36728 14.2923 2.36876 11.1388 3.3972 8.32496C4.42565 5.51112 7.22235 3.74479 10.2051 4.02525C13.1878 4.3057 15.6062 6.5624 16.0922 9.51863C16.2322 9.50867 16.3623 9.49862 16.5023 9.49862C18.6946 9.49786 20.5685 11.077 20.9394 13.2377C21.3102 15.3984 20.0701 17.512 18.0029 18.2423"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M15.0015 15.0013L12.0003 12L8.99902 15.0013"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.0002 12V20.0031"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
 
 export const Eye = ({
   width = DEFAULT_ICON_SIZE,

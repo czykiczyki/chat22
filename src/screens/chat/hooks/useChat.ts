@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { streamChatGPTResponse, ChatMessage } from '../../../api/chatApi';
 
+type UploadedFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
+
 export function useChat() {
   const [messages, setMessages] = useState<
     { id: string; text: string; sender: 'me' | 'assistant' }[]
@@ -13,7 +19,8 @@ export function useChat() {
       { id: String(prevMessages.length + 1), text, sender },
     ]);
   };
-  const sendMessage = async (userMessage: string) => {
+
+  const sendMessage = async (userMessage: string, files: UploadedFile[] = []) => {
     const userMessageId = String(messages.length + 1);
     addMessage(userMessage, 'me');
 
@@ -34,7 +41,7 @@ export function useChat() {
         { role: 'user', content: userMessage },
       ];
 
-      await streamChatGPTResponse(chatMessages, partial => {
+      await streamChatGPTResponse(chatMessages, files, partial => {
         partialResponse += partial;
 
         setMessages(prevMessages => {

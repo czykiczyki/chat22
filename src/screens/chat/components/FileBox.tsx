@@ -18,7 +18,7 @@ const FileBox: React.FC<FileBoxProps> = ({ file, onRemove }) => {
   return (
     <View style={styles.fileBox}>
       <TouchableOpacity style={styles.removeButton} onPress={() => onRemove(file.uri)}>
-        <SvgIcon.Close color={colors.error} width={18} />
+        <SvgIcon.Close color={colors.error} width={22} />
       </TouchableOpacity>
       {isImage ? (
         <Image source={{ uri: file.uri }} style={styles.imagePreview} />
@@ -43,13 +43,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    padding: 5,
     position: 'relative',
   },
   removeButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 1,
+    right: 1,
     zIndex: 10,
   },
   imagePreview: {
@@ -62,9 +61,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginBottom: 4,
+    paddingHorizontal: 4,
   },
   fileType: {
     color: colors.grey,
+    paddingHorizontal: 4,
     fontSize: 10,
     textAlign: 'center',
   },

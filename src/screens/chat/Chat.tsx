@@ -20,6 +20,7 @@ import { colors, dimensions } from '../../theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { pickDocument } from './utils/filePicker';
 import { showToast } from '../../utils/showToast';
+import SvgIcon from '../../components/SvgIcon';
 
 type UploadedFile = {
   uri: string;
@@ -108,7 +109,7 @@ const Chat = () => {
               <TouchableOpacity
                 style={styles.addButton}
                 onPress={handleFileUpload}>
-                <Text style={styles.addButtonText}>Add Files</Text>
+                <SvgIcon.Upload />
               </TouchableOpacity>
               <TextInput
                 style={styles.input}
@@ -155,29 +156,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButton: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginRight: 8,
-  },
-  addButtonText: {
-    color: colors.text,
-    fontWeight: 'bold',
-    fontSize: 14,
+    padding: 6,
+    marginRight: dimensions.spacings.xs,
   },
   input: {
     flex: 1,
     padding: dimensions.spacings.sm,
     fontSize: 16,
     backgroundColor: colors.darkGrey,
-    borderRadius: 20,
-    marginRight: 8,
+    borderRadius: dimensions.radiuses.md,
+    marginRight: dimensions.spacings.sm,
     color: colors.text,
   },
   sendButton: {
     backgroundColor: colors.primary,
-    borderRadius: 20,
+    borderRadius: dimensions.radiuses.md,
     paddingVertical: 10,
     paddingHorizontal: 16,
   },

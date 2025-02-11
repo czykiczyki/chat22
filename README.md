@@ -16,31 +16,25 @@ This is a **React Native** application developed for **iOS**, featuring a chat i
 
 ## **Installation**
 
-### **1. Clone the repository:**
-```bash
-git clone <repository-url>
-cd <project-directory>
-```
-
-### **2. Set up the environment:**
+### **1. Set up the environment:**
 Create a `.env` file in the root directory with your OpenAI API key:
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### **3. Install dependencies:**
+### **2. Install dependencies:**
 ```bash
 yarn
 ```
 
-### **4. Install iOS dependencies:**
+### **3. Install iOS dependencies:**
 Navigate to the `ios` directory and install CocoaPods:
 ```bash
 cd ios
 pod install
 ```
 
-### **5. Start the application:**
+### **4. Start the application:**
 Run the following commands from the root directory:
 ```bash
 yarn start

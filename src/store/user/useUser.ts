@@ -54,7 +54,7 @@ export function useUser() {
     };
 
     checkLoginStatus();
-  }, [dispatch]);
+  }, [dispatch, user?.id]);
 
   return {
     logInUser,

@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import Input, { InputProps } from '../Input/Input';
 
-const PasswordInput: React.FunctionComponent<InputProps> = (props) => {
+const PasswordInput: React.FunctionComponent<InputProps> = props => {
   const [isSecured, setIsSecured] = useState<boolean>(true);
   const toggleVisibility = useCallback(() => {
     setIsSecured(secured => !secured);
-  }, [isSecured, setIsSecured]);
+  }, [setIsSecured]);
 
   return (
     <Input
@@ -17,7 +17,7 @@ const PasswordInput: React.FunctionComponent<InputProps> = (props) => {
       autoCorrect={false}
       onIconPress={toggleVisibility}
     />
-  )
+  );
 };
 
 export default PasswordInput;

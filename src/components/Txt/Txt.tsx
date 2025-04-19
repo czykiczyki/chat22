@@ -1,11 +1,11 @@
 import React from 'react';
 import { Text, TextProps } from 'react-native';
-import { colors } from '../../theme';
+import { colors, typography } from '../../theme';
 
 const fontSizes = {
-  small: 10,
-  default: 16,
-  headline: 32,
+  small: typography.fontSizes.xs,
+  default: typography.fontSizes.md,
+  headline: typography.fontSizes.xxl,
 };
 
 interface TxtProps extends TextProps {
@@ -33,9 +33,7 @@ const Txt: React.FC<TxtProps> = ({
   }
 
   return (
-    <Text
-      style={[{ color: colors[color], fontSize: fontSizes[variant] }, style]}
-      {...rest}>
+    <Text style={[{ color: colors[color], fontSize: fontSizes[variant] }, style]} {...rest}>
       {children}
     </Text>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -9,17 +9,15 @@ import {
   PressableProps,
 } from 'react-native';
 import SvgIcon from '../SvgIcon';
-
 import Txt from '../Txt';
 import { SvgIconType } from '../SvgIcon/types';
 import { colors, dimensions } from '../../theme';
 
-export interface ButtonComponentProps extends PressableProps {
+interface Props extends PressableProps {
   containerStyle?: StyleProp<ViewStyle>;
   disabled?: boolean;
   loading?: boolean;
   onPress: () => void;
-  style?: StyleProp<ViewStyle>;
   title?: string;
   titleColor?: keyof typeof colors;
   icon?: SvgIconType;
@@ -35,12 +33,11 @@ export interface ButtonComponentProps extends PressableProps {
   marginHorizontal?: number;
 }
 
-const Button: React.FunctionComponent<ButtonComponentProps> = ({
+const Button: React.FC<Props> = ({
   containerStyle,
   disabled,
   loading,
   onPress,
-  style,
   title,
   titleColor,
   icon,
@@ -56,103 +53,78 @@ const Button: React.FunctionComponent<ButtonComponentProps> = ({
   marginHorizontal = 0,
   ...restProps
 }) => {
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [isPressed, setIsPressed] = useState<boolean>(false);
-
-  const shouldPress = () => {
-    if (loading || disabled) {
-      return;
-    }
-    onPress();
-  };
-  const onPressIn = () => {
-    if (!disabled && !loading && !isPressed) {
-      setIsPressed(true);
-    }
-  };
-  const onPressOut = () => {
-    setIsPressed(false);
-  };
-  const onHoverIn = () => {
-    if (!disabled && !loading && !isHovered) {
-      setIsHovered(true);
-    }
-  };
-  const onHoverOut = () => {
-    setIsHovered(false);
-  };
-
   const Icon = icon ? SvgIcon[icon] : undefined;
+  const isDisabled = loading || disabled;
+
+  const getButtonStyle = () => {
+    if (isDisabled) {
+      return secondary ? styles.secondaryDisabled : styles.primaryDisabled;
+    }
+    if (danger) {
+      return styles.danger;
+    }
+    if (dangerSecondary) {
+      return styles.dangerSecondary;
+    }
+    if (secondary) {
+      return styles.secondary;
+    }
+    return styles.primary;
+  };
+
+  const getTextColor = () => {
+    if (titleColor) {
+      return colors[titleColor];
+    }
+    if (danger) {
+      return colors.error;
+    }
+    if (secondary) {
+      return isDisabled ? colors.grey : colors.white;
+    }
+    return colors.white;
+  };
+
+  const getIconColor = () => {
+    if (iconColor) {
+      return colors[iconColor];
+    }
+    if (secondary) {
+      return isDisabled ? colors.grey : colors.primary;
+    }
+    return colors.white;
+  };
 
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={loading || disabled}
-      onPress={shouldPress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
-      onHoverIn={onHoverIn}
-      onHoverOut={onHoverOut}
+      disabled={isDisabled}
+      onPress={onPress}
       style={[
         styles.container,
         { width: width ? width : fullWidth ? '100%' : 'auto' },
-        secondary
-          ? styles.secondary
-          : danger
-          ? styles.danger
-          : dangerSecondary
-          ? styles.dangerSecondary
-          : styles.primary,
+        getButtonStyle(),
         small ? styles.small : styles.big,
-        disabled
-          ? secondary
-            ? styles.secondaryDisabled
-            : styles.primaryDisabled
-          : {},
-        isHovered ? styles.hovered : {},
-        isPressed ? styles.pressed : {},
         { marginVertical, marginHorizontal },
         containerStyle,
       ]}
-      {...restProps}>
+      {...restProps}
+    >
       <View style={styles.buttonContent}>
         {loading && (
-          <ActivityIndicator
-            size="small"
-            color={secondary ? colors.primary : colors.white}
-            style={styles.indicator}
-          />
+          <ActivityIndicator size="small" color={getIconColor()} style={styles.indicator} />
         )}
-        {Icon && iconLeft && iconColor && (
-          <View style={{ marginRight: 4 }}>
-            <Icon color={iconColor ? colors[iconColor] : colors.darkGrey} />
+        {Icon && iconLeft && (
+          <View style={styles.icon}>
+            <Icon color={getIconColor()} />
           </View>
         )}
-        <Txt
-          numberOfLines={1}
-          style={[
-            {
-              color:
-                (titleColor && colors[titleColor]) ||
-                (danger
-                  ? colors.error
-                  : secondary
-                  ? disabled
-                    ? colors.grey
-                    : colors.white
-                  : colors.white),
-            },
-          ]}>
-          {title}
-        </Txt>
-        <View>
-          {Icon && !iconLeft && !iconColor && (
-            <Icon color={secondary ? colors.primary : colors.white} />
-          )}
-        </View>
-        <View>
-          {Icon && !iconLeft && iconColor && <Icon color={colors[iconColor]} />}
-        </View>
+        {title && (
+          <Txt numberOfLines={1} style={{ color: getTextColor() }}>
+            {title}
+          </Txt>
+        )}
+        {Icon && !iconLeft && <Icon color={getIconColor()} />}
       </View>
     </Pressable>
   );
@@ -169,17 +141,11 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: colors.grey,
   },
-  tertiary: {
-    backgroundColor: colors.transparent,
-    color: colors.primary,
-  },
   danger: {
     backgroundColor: colors.primaryDark,
-    color: colors.error,
   },
   dangerSecondary: {
     backgroundColor: colors.error,
-    color: colors.primaryDark,
   },
   primaryDisabled: {
     opacity: 0.25,
@@ -189,21 +155,15 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     backgroundColor: colors.transparent,
   },
-  hovered: {
-    opacity: 0.7,
-  },
-  pressed: {
-    opacity: 0.9,
-  },
   small: {
     borderRadius: dimensions.radiuses.md,
-    paddingHorizontal: 24,
-    height: 40,
+    paddingHorizontal: dimensions.spacings.md,
+    height: dimensions.sizes.button.small,
   },
   big: {
     borderRadius: dimensions.radiuses.md,
-    paddingHorizontal: 32,
-    height: 52,
+    paddingHorizontal: dimensions.spacings.lg,
+    height: dimensions.sizes.button.default,
   },
   buttonContent: {
     display: 'flex',
@@ -214,8 +174,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   indicator: {
-    marginRight: 13,
+    marginRight: dimensions.spacings.sm,
   },
+  icon: { marginRight: 4 },
 });
 
 export default Button;

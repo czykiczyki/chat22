@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
 import { colors } from '../../theme/colors';
 import { dimensions } from '../../theme/dimensions';
 
@@ -17,7 +11,7 @@ interface Props {
 
 const Loader: React.FC<Props> = ({ style, size = 'small', center }) => {
   return (
-    <View style={[styles.container, style, center && { alignItems: 'center' }]}>
+    <View style={[styles.container, style, center && styles.centered]}>
       <ActivityIndicator size={size} color={colors.white} />
     </View>
   );
@@ -30,6 +24,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.background,
     marginVertical: dimensions.spacings.md,
+  },
+  centered: {
+    alignItems: 'center',
   },
 });
 

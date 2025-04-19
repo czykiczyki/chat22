@@ -11,27 +11,27 @@ const toastTheme = {
   success: {
     icon: SvgIcon.DoneCheck,
     color: colors.success,
-    size: 15,
+    size: dimensions.spacings.sm,
     iconStyles: undefined,
   },
   error: {
     icon: SvgIcon.Close,
     color: colors.error,
-    size: 19,
+    size: dimensions.spacings.md,
     iconStyles: undefined,
   },
   warning: {
     icon: SvgIcon.Information,
     color: colors.alert,
-    size: 22,
+    size: dimensions.spacings.lg,
     iconStyles: {
-      transform: [{ rotate: `180deg` }],
+      transform: [{ rotate: '180deg' }],
     },
   },
   info: {
     icon: SvgIcon.Information,
     color: colors.info,
-    size: 22,
+    size: dimensions.spacings.lg,
     iconStyles: undefined,
   },
 };
@@ -53,10 +53,7 @@ const BaseToast: React.FC<{
         <View>
           <Txt variant="default">{props.title}</Txt>
           {props.serverErrMessage && (
-            <Txt
-              variant="small"
-              style={styles.serverErrMessage}
-              numberOfLines={2}>
+            <Txt variant="small" style={styles.serverErrMessage} numberOfLines={2}>
               ERROR: {props.serverErrMessage.toUpperCase()}
             </Txt>
           )}
@@ -68,35 +65,23 @@ const BaseToast: React.FC<{
 
 export const toastConfig = {
   success: (props: BaseToastProps) => (
-    <BaseToast
-      title={props.text1}
-      serverErrMessage={props.text2}
-      type="success"
-    />
+    <BaseToast title={props.text1} serverErrMessage={props.text2} type="success" />
   ),
   error: (props: BaseToastProps) => (
-    <BaseToast
-      title={props.text1}
-      serverErrMessage={props.text2}
-      type="error"
-    />
+    <BaseToast title={props.text1} serverErrMessage={props.text2} type="error" />
   ),
   info: (props: BaseToastProps) => (
     <BaseToast title={props.text1} serverErrMessage={props.text2} type="info" />
   ),
   warning: (props: BaseToastProps) => (
-    <BaseToast
-      title={props.text1}
-      serverErrMessage={props.text2}
-      type="warning"
-    />
+    <BaseToast title={props.text1} serverErrMessage={props.text2} type="warning" />
   ),
 };
 
 export const toastOffsets = {
-  topOffset: 12,
+  topOffset: dimensions.spacings.sm,
   bottomOffset: 0,
-  keyboardOffset: 30,
+  keyboardOffset: dimensions.spacings.md,
 };
 
 const Toast = () => {
@@ -115,10 +100,21 @@ const Toast = () => {
     return toastOffsets;
   }, [insets]);
 
-  return <RNToast config={toastConfig} position="top" {...offsets} />;
+  return (
+    <View style={styles.toastWrapper}>
+      <RNToast config={toastConfig} position="top" {...offsets} />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
+  toastWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+  },
   container: {
     flexDirection: 'row',
     minHeight: 66,

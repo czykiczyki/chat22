@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,6 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
-  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { useChat } from './hooks/useChat';
@@ -21,18 +20,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { pickDocument } from './utils/filePicker';
 import { showToast } from '../../utils/showToast';
 import SvgIcon from '../../components/SvgIcon';
+import RNFetchBlob from 'rn-fetch-blob';
+import { UploadedFile } from '../../types/chat';
 
-type UploadedFile = {
-  uri: string;
-  name: string;
-  type: string;
-  size: number;
+const copyFileToPermanentLocation = async (sourceUri: string): Promise<string> => {
+  const cleanSourceUri = sourceUri.replace('file://', '');
+
+  try {
+    const sourceExists = await RNFetchBlob.fs.exists(cleanSourceUri);
+    if (!sourceExists) {
+      throw new Error(`Source file does not exist: ${cleanSourceUri}`);
+    }
+
+    return cleanSourceUri;
+  } catch (error) {
+    throw error;
+  }
 };
 
 const Chat = () => {
   const { messages, isLoading, sendMessage } = useChat();
   const [newMessage, setNewMessage] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [filesToCleanup, setFilesToCleanup] = useState<UploadedFile[]>([]);
+  const flatListRef = useRef<FlatList>(null);
+  const isDisabled = isProcessing || isLoading;
+
+  const scrollToBottom = useCallback(() => {
+    if (flatListRef.current && messages.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -40,85 +64,165 @@ const Chat = () => {
 
   const handleFileUpload = async () => {
     try {
-      const file = await pickDocument();
-
-      if (file && file.size && file.size > 10 * 1024 * 1024) {
-        showToast('error', 'File is too large. Maximum allowed size is 10MB.');
-
+      const result = await pickDocument();
+      if (!result) {
+        showToast('error', 'No file selected');
         return;
       }
 
-      if (file) {
-        const uploadedFile: UploadedFile = {
-          uri: file.uri,
-          name: file.name || 'Unnamed file',
-          type: file.type || 'application/octet-stream',
-          size: file.size || 0,
-        };
+      const { uri, name, type, size } = result;
+      const fileName = name?.trim() || `image_${Date.now()}.jpg`;
 
-        setUploadedFiles(prev => [...prev, uploadedFile]);
+      try {
+        const permanentPath = await copyFileToPermanentLocation(uri);
+
+        const exists = await RNFetchBlob.fs.exists(permanentPath);
+        if (!exists) {
+          throw new Error('File does not exist at permanent path');
+        }
+
+        setUploadedFiles(prev => [
+          ...prev,
+          {
+            ...result,
+            uri: permanentPath,
+            name: fileName,
+            type: type || 'image/jpeg',
+            size: size || 0,
+            permanentPath,
+          },
+        ]);
+      } catch (copyError) {
+        showToast('error', 'Failed to copy file. Please try again.');
       }
     } catch (error) {
-      showToast('error', 'Error picking file.');
-      if (__DEV__) {
-        console.error('Error picking file:', error);
+      showToast('error', 'Failed to upload file');
+    }
+  };
+
+  const removeFile = async (index: number) => {
+    const fileToRemove = uploadedFiles[index];
+    if (fileToRemove.permanentPath) {
+      try {
+        await RNFetchBlob.fs.unlink(fileToRemove.permanentPath);
+      } catch (error) {
+        // Silent error on cleanup
+      }
+    }
+
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSend = async () => {
+    if (newMessage.trim() || uploadedFiles.length > 0) {
+      setIsProcessing(true);
+      try {
+        // Make sure all files have permanent paths and exist
+        const filesWithPaths = uploadedFiles.map(file => {
+          if (!file.permanentPath) {
+            throw new Error(`File ${file.name} does not have a permanent path`);
+          }
+          return {
+            ...file,
+            permanentPath: file.permanentPath,
+          };
+        });
+
+        // Move files to cleanup queue before sending
+        setFilesToCleanup(prev => [...prev, ...filesWithPaths]);
+
+        await sendMessage(newMessage, filesWithPaths);
+        setNewMessage('');
+        setUploadedFiles([]);
+      } finally {
+        setIsProcessing(false);
       }
     }
   };
 
-  const removeFile = (uri: string) => {
-    setUploadedFiles(prev => prev.filter(file => file.uri !== uri));
-  };
-
-  const handleSend = () => {
-    if (newMessage.trim() || uploadedFiles.length > 0) {
-      sendMessage(newMessage, uploadedFiles);
-      setNewMessage('');
-      setUploadedFiles([]);
+  const cleanupFiles = async (files: UploadedFile[]) => {
+    for (const file of files) {
+      if (file.permanentPath) {
+        try {
+          await RNFetchBlob.fs.unlink(file.permanentPath);
+        } catch (error) {
+          // Silent error on cleanup
+        }
+      }
     }
   };
+
+  // Cleanup effect to remove permanent files
+  useEffect(() => {
+    const cleanupFilesEffect = async () => {
+      if (filesToCleanup.length > 0 && !isProcessing) {
+        await cleanupFiles(filesToCleanup);
+        setFilesToCleanup([]);
+      }
+    };
+
+    const timer = setTimeout(cleanupFilesEffect, 5000);
+    return () => clearTimeout(timer);
+  }, [filesToCleanup, isProcessing]);
+
+  // Cleanup effect for component unmount
+  useEffect(() => {
+    return () => {
+      if (!isProcessing) {
+        cleanupFiles(filesToCleanup);
+      }
+    };
+  }, [filesToCleanup, isProcessing]);
 
   return (
     <KeyboardAvoidingView
       keyboardVerticalOffset={90}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <TouchableWithoutFeedback onPress={dismissKeyboard}>
         <View style={styles.innerContainer}>
           <FlatList
+            ref={flatListRef}
             data={messages}
-            renderItem={({ item }) => <MessageBubble message={item} />}
+            renderItem={({ item }) => <MessageBubble message={item} isLoading={isLoading} />}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.messagesList}
+            onContentSizeChange={scrollToBottom}
+            onLayout={scrollToBottom}
           />
-
-          {isLoading && (
-            <ActivityIndicator size="large" color={colors.primary} />
-          )}
 
           <SafeAreaView style={styles.bottom} edges={['bottom']}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filesPreviewContainer}>
+              contentContainerStyle={styles.filesPreviewContainer}
+            >
               {uploadedFiles.map((file, index) => (
-                <FileBox key={index} file={file} onRemove={removeFile} />
+                <FileBox key={index} file={file} onRemove={() => removeFile(index)} />
               ))}
             </ScrollView>
             <View style={styles.inputContainer}>
               <TouchableOpacity
-                style={styles.addButton}
-                onPress={handleFileUpload}>
+                style={[styles.addButton, isDisabled && styles.disabled]}
+                disabled={isDisabled}
+                onPress={handleFileUpload}
+              >
                 <SvgIcon.Upload />
               </TouchableOpacity>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDisabled && styles.disabled]}
                 placeholder="Write a message..."
                 placeholderTextColor={colors.grey}
                 value={newMessage}
                 onChangeText={setNewMessage}
+                editable={!isDisabled}
               />
-              <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+              <TouchableOpacity
+                style={[styles.sendButton, isDisabled && styles.disabled]}
+                onPress={handleSend}
+                disabled={isDisabled}
+              >
                 <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
             </View>
@@ -178,6 +282,9 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  disabled: {
+    opacity: 0.5,
   },
 });
 

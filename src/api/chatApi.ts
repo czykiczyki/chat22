@@ -84,24 +84,12 @@ export const streamChatGPTResponse = async (
   onPartialResponse: (partial: string) => void
 ) => {
   try {
-    console.log('Starting streamChatGPTResponse with:', {
-      messageCount: messages.length,
-      fileCount: files.length,
-      firstMessage: messages[0],
-      lastMessage: messages[messages.length - 1],
-    });
-
     if (files.length > MAX_FILES_PER_MESSAGE) {
       throw new Error(`Maximum ${MAX_FILES_PER_MESSAGE} files allowed per message`);
     }
 
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
     const textFiles = files.filter(f => !f.type.startsWith('image/'));
-
-    console.log('Processing files:', {
-      imageFiles: imageFiles.map(f => ({ name: f.name, type: f.type, size: f.size })),
-      textFiles: textFiles.map(f => ({ name: f.name, type: f.type, size: f.size })),
-    });
 
     const fileSegments: Array<{
       type: 'text' | 'image_url';
@@ -116,11 +104,6 @@ export const streamChatGPTResponse = async (
       }
 
       try {
-        console.log(`Reading image file: ${file.name}`, {
-          uri: file.uri,
-          permanentPath: file.permanentPath,
-        });
-
         const filePath = file.permanentPath || file.uri;
 
         const exists = await RNFetchBlob.fs.exists(filePath);
@@ -133,12 +116,9 @@ export const streamChatGPTResponse = async (
             ? filePath.replace('file://', '')
             : filePath;
 
-        console.log(`Reading file from path: ${sourcePath}`);
-
         let finalPath = sourcePath;
         const fileInfo = await RNFetchBlob.fs.stat(sourcePath);
         if (fileInfo.size > 500 * 1024) {
-          console.log('Image is large, resizing...');
           try {
             const resizedImage = await ImageResizer.createResizedImage(
               sourcePath,
@@ -149,7 +129,6 @@ export const streamChatGPTResponse = async (
               0,
               undefined
             );
-            console.log('Image resized successfully:', resizedImage);
             finalPath = resizedImage.path;
           } catch (resizeError) {
             console.error('Error resizing image:', resizeError);
@@ -158,9 +137,6 @@ export const streamChatGPTResponse = async (
         }
 
         const base64 = await RNFetchBlob.fs.readFile(finalPath, 'base64');
-        console.log(
-          `Successfully processed image file: ${file.name}, size: ${base64.length} bytes`
-        );
 
         fileSegments.push({
           type: 'image_url',
@@ -192,7 +168,6 @@ export const streamChatGPTResponse = async (
       try {
         const cachedContent = getCachedFile(file);
         if (cachedContent) {
-          console.log(`Using cached content for file: ${file.name}`);
           fileSegments.push({
             type: 'text',
             text: `File: ${file.name}\nContent:\n${cachedContent}`,
@@ -200,11 +175,9 @@ export const streamChatGPTResponse = async (
           continue;
         }
 
-        console.log(`Reading text file: ${file.name}`);
         const encoding = await detectEncoding(file);
         const content = await RNFetchBlob.fs.readFile(file.uri, encoding);
         const truncated = content.slice(0, 10000);
-        console.log(`Successfully read text file: ${file.name}, size: ${truncated.length} chars`);
 
         const processedContent =
           truncated.length > 1024 * 1024 ? compressContent(truncated) : truncated;
@@ -233,13 +206,6 @@ export const streamChatGPTResponse = async (
       ...messages,
       ...(fileSegments.length > 0 ? [userMessageWithFiles] : []),
     ];
-
-    console.log('Sending request to OpenAI API with:', {
-      model: 'gpt-4-turbo',
-      messageCount: enhancedMessages.length,
-      hasFiles: fileSegments.length > 0,
-      lastMessage: enhancedMessages[enhancedMessages.length - 1],
-    });
 
     const response = await axios({
       method: 'post',
@@ -280,8 +246,6 @@ export const streamChatGPTResponse = async (
       }
       throw error;
     });
-
-    console.log('Received response from OpenAI API');
 
     response.data.split('\n').forEach((line: string) => {
       if (line.startsWith('data: ')) {
